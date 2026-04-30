@@ -1,303 +1,190 @@
 /**
- * ELITE ELECTION — Main Application Entry Point
- * Wires together scene, zones, scroll, particles, chat.
+ * ELITE ELECTION — Main Application Orchestrator
+ * Manages lifecycle, scene state, UI synchronization, and resources.
  */
+class CoreApp {
+  constructor() {
+    this.sceneManager = null;
+    this.zoneBuilder = null;
+    this.lightingRig = null;
+    this.particles = null;
+    this.postEffects = null;
+    this.scrollController = null;
+    this.interactions = null;
+    this.assistantUI = null;
+    this.zonesData = [];
+    this.infiniteMenuInstance = null;
 
-(function () {
-  "use strict";
-
-  let sceneManager,
-    zoneBuilder,
-    lightingRig,
-    particles,
-    postEffects,
-    scrollController,
-    interactions,
-    assistantUI;
-  let zonesData = [];
-
-  // ─── Loading ───
-  const loadingScreen = document.getElementById("loading-screen");
-  const loadingBar = document.getElementById("loading-bar");
-  const loadingText = document.getElementById("loading-text");
-  let loadProgress = 0;
-
-  function updateLoading(percent, text) {
-    loadProgress = percent;
-    if (loadingBar) loadingBar.style.width = percent + "%";
-    if (loadingText) loadingText.textContent = text;
+    this.dom = {
+      loadingScreen: document.getElementById("loading-screen"),
+      loadingBar: document.getElementById("loading-bar"),
+      loadingText: document.getElementById("loading-text"),
+      hero: document.getElementById("hero-overlay"),
+      zoneLabel: document.getElementById("zone-label"),
+      infoOverlay: document.getElementById("info-overlay"),
+      progress: document.getElementById("scroll-progress")
+    };
   }
 
-  // ─── Fetch Zone Data ───
-  async function fetchZones() {
+  /**
+   * Initialize the application
+   */
+  async init() {
     try {
-      const res = await fetch("/api/zones");
-      const data = await res.json();
-      if (data.success) return data.data;
-    } catch (e) {
-      /* offline */
+      this._updateLoading(10, "Fetching election data...");
+      this.zonesData = await this._fetchZones();
+
+      this._updateLoading(25, "Initializing 3D viewport...");
+      this.sceneManager = new SceneManager("three-canvas");
+
+      this._updateLoading(40, "Calibrating lighting rig...");
+      this.lightingRig = new LightingRig(this.sceneManager.scene);
+
+      this._updateLoading(55, "Generating election zones...");
+      this.zoneBuilder = new ZoneBuilder(this.sceneManager.scene);
+
+      this._updateLoading(70, "Igniting particle systems...");
+      this.particles = new ParticleSystem(this.sceneManager.scene, 400);
+
+      this._updateLoading(85, "Establishing interaction protocols...");
+      this.interactions = new Interactions(this.sceneManager.scene, this.sceneManager.camera, this.sceneManager.canvas);
+      
+      this._updateLoading(90, "Awakening Gnan AI...");
+      this.assistantUI = new AssistantUI();
+      
+      this._setupCoreSystems();
+      this._bindGlobalEvents();
+      this._startLoop();
+
+      this._updateLoading(100, "Ready to go!");
+      setTimeout(() => this._hideLoading(), 800);
+    } catch (error) {
+      console.error("[App] Boot failure:", error);
+      this._updateLoading(100, "Error loading application. Please refresh.");
     }
-    return [];
   }
 
-  async function fetchZoneDetail(id) {
-    try {
-      const res = await fetch(`/api/zones/${id}`);
-      const data = await res.json();
-      if (data.success) return data.data;
-    } catch (e) {
-      /* offline */
-    }
-    return null;
+  /**
+   * Internal loading bar updater
+   */
+  _updateLoading(percent, text) {
+    if (this.dom.loadingBar) this.dom.loadingBar.style.width = `${percent}%`;
+    if (this.dom.loadingText) this.dom.loadingText.textContent = text;
   }
 
-  // ─── Zone Change Handler ───
-  async function onZoneChange(zoneName, index) {
-    // Update zone dots
-    document.querySelectorAll(".zone-dot").forEach((dot, i) => {
-      dot.classList.toggle("active", i === index);
-      dot.setAttribute("aria-selected", i === index ? "true" : "false");
-    });
-
-    // Update nav links
-    document.querySelectorAll(".nav-link[data-zone]").forEach((link) => {
-      link.classList.toggle("active", link.dataset.zone === zoneName);
-    });
-
-    // Hide hero on scroll past welcome
-    const hero = document.getElementById("hero-overlay");
-    if (hero) hero.classList.toggle("hidden", index > 0);
-
-    // Zone label
-    const zoneLabel = document.getElementById("zone-label");
-    const zoneLabelIcon = document.getElementById("zone-label-icon");
-    const zoneLabelText = document.getElementById("zone-label-text");
-
-    // Fetch zone detail for info card & chat
-    const detail = await fetchZoneDetail(zoneName);
-    if (detail && index > 0) {
-      zoneLabel.classList.add("visible");
-      zoneLabelIcon.textContent = detail.icon;
-      zoneLabelText.textContent = detail.name;
-
-      // Info overlay
-      const infoOverlay = document.getElementById("info-overlay");
-      document.getElementById("info-icon").textContent = detail.icon;
-      document.getElementById("info-title").textContent = detail.name;
-      document.getElementById("info-tagline").textContent = detail.tagline;
-      document.getElementById("info-desc").textContent = detail.description;
-
-      const factsList = document.getElementById("info-facts");
-      factsList.innerHTML = "";
-      (detail.key_facts || []).forEach((f) => {
-        const li = document.createElement("li");
-        li.textContent = f;
-        factsList.appendChild(li);
-      });
-
-      infoOverlay.classList.add("visible");
-
-      // Update chat context
-      if (assistantUI) {
-        assistantUI.setZone(zoneName, detail);
-      }
-    } else {
-      zoneLabel.classList.remove("visible");
-      document.getElementById("info-overlay").classList.remove("visible");
-    }
-
-    // Update scroll progress
-    const progress = document.getElementById("scroll-progress");
-    if (progress) {
-      const pct = ((index + 1) / 5) * 100;
-      progress.style.width = pct + "%";
-      progress.setAttribute("aria-valuenow", pct);
-    }
-
-    // Lighting
-    if (lightingRig) lightingRig.highlightZone(zoneName);
+  _hideLoading() {
+    this.dom.loadingScreen?.classList.add("hidden");
+    this.sceneManager?.start();
   }
 
-  // ─── Init ───
-  async function init() {
-    updateLoading(10, "Loading zone data…");
-    zonesData = await fetchZones();
+  async _fetchZones() {
+    const res = await fetch("/api/zones");
+    const data = await res.json();
+    return data.success ? data.data : [];
+  }
 
-    updateLoading(25, "Initializing 3D scene…");
-    sceneManager = new SceneManager("three-canvas");
+  _setupCoreSystems() {
+    // Scroll handling
+    this.scrollController = new ScrollController(this.sceneManager.camera, (zone, idx) => this._onZoneChange(zone, idx));
+    
+    // Post FX
+    this.postEffects = new PostEffects(this.sceneManager);
 
-    updateLoading(40, "Building lighting…");
-    lightingRig = new LightingRig(sceneManager.scene);
-
-    updateLoading(55, "Creating election zones…");
-    zoneBuilder = new ZoneBuilder(sceneManager.scene);
-
-    updateLoading(70, "Spawning particles…");
-    particles = new ParticleSystem(sceneManager.scene, 400);
-
-    // Ground plane
-    const groundGeo = new THREE.PlaneGeometry(200, 500);
-    const groundMat = new THREE.MeshPhongMaterial({
-      color: 0x0a0a1e,
-      flatShading: true,
-      side: THREE.DoubleSide,
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
+    // Ground logic
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(200, 500),
+      new THREE.MeshPhongMaterial({ color: 0x0a0a1e, flatShading: true, side: THREE.DoubleSide })
+    );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, -4, -100);
     ground.receiveShadow = true;
-    sceneManager.addToScene(ground);
+    this.sceneManager.addToScene(ground);
+  }
 
-    updateLoading(78, "Adding visual effects…");
-    postEffects = new PostEffects(sceneManager);
+  _bindGlobalEvents() {
+    // Navigation & dots delegation
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-zone]");
+      if (target) {
+        const idx = this.scrollController.getZoneIndex(target.dataset.zone);
+        if (idx >= 0) this.scrollController.scrollToZone(idx);
+      }
+    });
 
-    updateLoading(80, "Setting up scroll…");
-    scrollController = new ScrollController(sceneManager.camera, onZoneChange);
+    // Hero interaction
+    document.getElementById("hero-chat-btn")?.addEventListener("click", () => this.assistantUI?.openPanel());
 
-    updateLoading(85, "Enabling interactions…");
-    interactions = new Interactions(
-      sceneManager.scene,
-      sceneManager.camera,
-      sceneManager.canvas,
-    );
-
-    updateLoading(90, "Loading assistant…");
-    assistantUI = new AssistantUI();
-
-    // Fix: Connect Hero Chat Button to AssistantUI
-    const heroChatBtn = document.getElementById("hero-chat-btn");
-    if (heroChatBtn) {
-      heroChatBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (assistantUI) assistantUI.openPanel();
-      });
-    }
-
-
-    // ─── Bubble Menu ───
+    // Navigation Menu (BubbleMenu)
     const bubbleContainer = document.getElementById("bubble-menu-container");
     if (bubbleContainer) {
       new BubbleMenu(bubbleContainer, {
-        logo: '<span style="font-weight:800; font-family:var(--font-display); letter-spacing:0.05em;">🗳️ ELITE</span>',
+        logo: '<span style="font-weight:800; font-family:var(--font-display);">🗳️ ELITE</span>',
         useFixedPosition: true,
         items: [
-          { label: 'Register', zone: 'registration', href: '#', rotation: -5, hoverStyles: { bgColor: '#ff9933', textColor: '#fff' } },
-          { label: 'Timeline', zone: 'timeline', href: '#', rotation: 3, hoverStyles: { bgColor: '#ffffff', textColor: '#138808' } },
-          { label: 'Polling', zone: 'polling', href: '#', rotation: -2, hoverStyles: { bgColor: '#138808', textColor: '#fff' } },
-          { label: 'Results', zone: 'results', href: '#', rotation: 6, hoverStyles: { bgColor: '#000080', textColor: '#fff' } },
-          { label: 'Welcome', zone: 'welcome', href: '#', rotation: -4, hoverStyles: { bgColor: '#3b82f6', textColor: '#fff' } }
+          { label: 'Register', zone: 'registration', href: '#' },
+          { label: 'Timeline', zone: 'timeline', href: '#' },
+          { label: 'Polling', zone: 'polling', href: '#' },
+          { label: 'Results', zone: 'results', href: '#' },
+          { label: 'Welcome', zone: 'welcome', href: '#' }
         ]
       });
+      document.querySelector('.nav-bar')?.remove(); // Clean up old nav
     }
-
-    // Hide old nav bar
-    const oldNav = document.querySelector('.nav-bar');
-    if (oldNav) oldNav.style.display = 'none';
-
-    // ─── Animation Loop ───
-    sceneManager.onAnimate((delta, elapsed) => {
-      zoneBuilder.animate(elapsed);
-      particles.animate(elapsed);
-      postEffects.animate(elapsed);
-      interactions.update();
-    });
-
-    // ─── Nav & Dot Clicks (Event Delegation) ───
-    document.addEventListener("click", (e) => {
-      const el = e.target.closest("[data-zone]");
-      if (el) {
-        const zone = el.dataset.zone;
-        const idx = scrollController.getZoneIndex(zone);
-        if (idx >= 0) scrollController.scrollToZone(idx);
-      }
-    });
-
-    // ─── Resources Menu ───
-    const resourcesBtn = document.getElementById("nav-resources");
-    const resourcesOverlay = document.getElementById("resources-overlay");
-    const closeResourcesBtn = document.getElementById("close-resources-btn");
-    let infiniteMenuInstance = null;
-
-    if (resourcesBtn && resourcesOverlay) {
-      resourcesBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        resourcesOverlay.style.display = "flex";
-
-        requestAnimationFrame(() => {
-          if (!infiniteMenuInstance) {
-            const container = document.getElementById(
-              "infinite-menu-container",
-            );
-            const items = [
-              {
-                image:
-                  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-                link: "https://voters.eci.gov.in/",
-                title: "Voter Portal",
-                description: "Official ECI portal for voter registration and EPIC.",
-              },
-              {
-                image:
-                  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-                link: "https://eci.gov.in/",
-                title: "Election Commission",
-                description: "The Election Commission of India website.",
-              },
-              {
-                image:
-                  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-                link: "tel:1950",
-                title: "Voter Helpline",
-                description: "Call 1950 for any election-related assistance.",
-              },
-              {
-                image:
-                  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mMs+M9QDwAEKwGAg8t/xQAAAABJRU5ErkJggg==",
-                link: "https://cvigil.eci.gov.in/",
-                title: "cVIGIL App",
-                description: "Report Model Code of Conduct violations.",
-              },
-            ];
-            infiniteMenuInstance = new InfiniteMenu(container, items, 1.0);
-          } else {
-            const resizeEvent = new Event("resize");
-            window.dispatchEvent(resizeEvent);
-          }
-        });
-      });
-
-      closeResourcesBtn.addEventListener("click", () => {
-        resourcesOverlay.style.display = "none";
-      });
-    }
-
-    // ─── Scroll Progress ───
-    window.addEventListener("scroll", () => {
-      const scrolled = window.scrollY;
-      const total =
-        document.getElementById("scroll-spacer").offsetHeight -
-        window.innerHeight;
-      const pct = Math.min((scrolled / total) * 100, 100);
-      const progress = document.getElementById("scroll-progress");
-      if (progress) {
-        progress.style.width = pct + "%";
-        progress.setAttribute("aria-valuenow", Math.round(pct));
-      }
-    });
-
-    updateLoading(100, "Ready!");
-
-    // Start
-    setTimeout(() => {
-      loadingScreen.classList.add("hidden");
-      sceneManager.start();
-    }, 600);
   }
 
-  // ─── Boot ───
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  async _onZoneChange(zoneName, index) {
+    // UI state sync
+    this.dom.hero?.classList.toggle("hidden", index > 0);
+    this._updateNavState(zoneName, index);
+
+    // Fetch and display zone details
+    const res = await fetch(`/api/zones/${zoneName}`);
+    const data = await res.json();
+    if (data.success && index > 0) {
+      this._updateInfoOverlay(data.data);
+      this.assistantUI?.setZone(zoneName, data.data);
+    } else {
+      this.dom.infoOverlay?.classList.remove("visible");
+      this.dom.zoneLabel?.classList.remove("visible");
+    }
+
+    // Camera/Lighting logic
+    this.lightingRig?.highlightZone(zoneName);
   }
-})();
+
+  _updateNavState(zoneName, index) {
+    document.querySelectorAll(".zone-dot").forEach((dot, i) => dot.classList.toggle("active", i === index));
+    if (this.dom.progress) {
+      const pct = Math.round(((index + 1) / 5) * 100);
+      this.dom.progress.style.width = `${pct}%`;
+    }
+  }
+
+  _updateInfoOverlay(detail) {
+    if (!this.dom.infoOverlay) return;
+    this.dom.infoOverlay.querySelector("#info-title").textContent = detail.name;
+    this.dom.infoOverlay.querySelector("#info-desc").textContent = detail.description;
+    this.dom.infoOverlay.classList.add("visible");
+    
+    const label = this.dom.zoneLabel;
+    if (label) {
+      label.querySelector("#zone-label-text").textContent = detail.name;
+      label.classList.add("visible");
+    }
+  }
+
+  _startLoop() {
+    this.sceneManager?.onAnimate((delta, elapsed) => {
+      this.zoneBuilder?.animate(elapsed);
+      this.particles?.animate(elapsed);
+      this.postEffects?.animate(elapsed);
+      this.interactions?.update();
+    });
+  }
+}
+
+// ─── Entry Point ───
+document.addEventListener("DOMContentLoaded", () => {
+  window.app = new CoreApp();
+  window.app.init();
+});
