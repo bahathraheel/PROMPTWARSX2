@@ -112,13 +112,19 @@
   </button>
 
   <!-- Chat Panel -->
-  <aside class="chat-panel" id="chat-panel" role="dialog" aria-label="AI Election Assistant" aria-hidden="true">
+  <aside class="chat-panel" id="chat-panel" role="dialog" aria-label="GNAN — AI Election Assistant" aria-hidden="true">
     <div class="chat-header">
-      <div>
-        <div class="chat-header-title">🤖 Election Guide</div>
-        <div class="chat-header-subtitle">AI-powered • Non-partisan</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#38bdf8);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">G</div>
+        <div>
+          <div class="chat-header-title">GNAN <span style="font-size:0.6rem;background:#10b981;color:#fff;padding:1px 6px;border-radius:999px;vertical-align:middle;margin-left:4px;">LIVE</span></div>
+          <div class="chat-header-subtitle">Powered by Google &amp; Gemini &bull; Non-partisan</div>
+        </div>
       </div>
-      <button class="btn btn-icon btn-ghost" id="chat-close" aria-label="Close assistant" style="color:white;border-color:rgba(255,255,255,0.3);">✕</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-icon btn-ghost" id="chat-mute" aria-label="Mute GNAN" title="Mute GNAN" style="color:white;border-color:rgba(255,255,255,0.3);font-size:1rem;">🔊</button>
+        <button class="btn btn-icon btn-ghost" id="chat-close" aria-label="Close assistant" style="color:white;border-color:rgba(255,255,255,0.3);">&#x2715;</button>
+      </div>
     </div>
     <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-label="Chat messages">
       <!-- Messages injected by JS -->

@@ -23,7 +23,53 @@ class AssistantUI {
     this.messageCount = 0;
     this.hasShownTip = {};
 
+    // GNAN Voice — youthful 16-year-old girl settings
+    this.isMuted = false;
+    this._selectedVoice = null;
+    this._voiceReady = false;
+    this._loadVoice();
+
     this._bindEvents();
+  }
+
+  /** Load and cache the best available teen/female voice */
+  _loadVoice() {
+    const pick = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+
+      // Priority list: young-sounding female voices across browsers
+      const preferred = [
+        "Samantha",           // macOS/iOS – bright, young
+        "Google US English",  // Chrome – clear female
+        "Microsoft Aria Online (Natural) - English (United States)",
+        "Microsoft Zira - English (United States)",
+        "Karen",              // macOS Australian – youthful
+        "Moira",
+        "Tessa",
+      ];
+
+      for (const name of preferred) {
+        const v = voices.find((vx) => vx.name === name);
+        if (v) { this._selectedVoice = v; this._voiceReady = true; return; }
+      }
+
+      // Fallback: any en-US female voice
+      const female = voices.find(
+        (v) => v.lang.startsWith("en") && /female|woman|girl/i.test(v.name)
+      );
+      if (female) { this._selectedVoice = female; this._voiceReady = true; return; }
+
+      // Last resort: first en-US voice
+      const enUs = voices.find((v) => v.lang === "en-US");
+      if (enUs) { this._selectedVoice = enUs; this._voiceReady = true; }
+    };
+
+    if (window.speechSynthesis.getVoices().length) {
+      pick();
+    } else {
+      window.speechSynthesis.addEventListener("voiceschanged", pick, { once: true });
+    }
   }
 
   _bindEvents() {
@@ -36,6 +82,18 @@ class AssistantUI {
     this.input.addEventListener("input", () => {
       this.sendBtn.disabled = !this.input.value.trim();
     });
+
+    // Mute toggle button in chat header
+    const muteBtn = document.getElementById("chat-mute");
+    if (muteBtn) {
+      muteBtn.addEventListener("click", () => {
+        this.isMuted = !this.isMuted;
+        muteBtn.innerHTML = this.isMuted ? "🔇" : "🔊";
+        muteBtn.setAttribute("aria-label", this.isMuted ? "Unmute GNAN" : "Mute GNAN");
+        muteBtn.title = this.isMuted ? "Unmute GNAN" : "Mute GNAN";
+        if (this.isMuted) window.speechSynthesis.cancel();
+      });
+    }
 
     // Keyboard shortcut: Escape to close
     document.addEventListener("keydown", (e) => {
@@ -57,17 +115,19 @@ class AssistantUI {
 
     // Add welcome message if first open
     if (this.messages.children.length === 0) {
-      this.addBotMessage(
-        "👋 HEY I AM GNAN HOW CAN I ASSIST YOU\n\n" +
-          "I am your highly capable Election Guide powered by Google and Gemini. " +
-          "I can help you with:\n" +
-          "• 📝 Voter registration\n" +
-          "• 📅 Election timelines & deadlines\n" +
-          "• 🗳️ Polling day procedures\n" +
-          "• 📊 Understanding results\n" +
-          "• ♿ Accessibility accommodations\n\n" +
-          "Ask me anything or tap a suggestion below! 👇",
-      );
+      const welcome =
+        "Hey! I'm GNAN 👋 How can I assist you today?\n\n" +
+        "I'm your super-smart Election Guide powered by Google and Gemini — " +
+        "think of me as your go-to bestie for anything civic! I can help with:\n" +
+        "• 📝 Voter registration\n" +
+        "• 📅 Election timelines & deadlines\n" +
+        "• 🗳️ Polling day procedures\n" +
+        "• 📊 Understanding results\n" +
+        "• ♿ Accessibility accommodations\n\n" +
+        "Go ahead — ask me anything! 👇";
+      this.addBotMessage(welcome);
+      // Speak the welcome message automatically
+      setTimeout(() => this._speakText(welcome), 600);
       this._showDefaultFollowUps();
     }
   }
@@ -220,6 +280,7 @@ class AssistantUI {
         this.addBotMessage(
           data.data.answer,
           modelTag ? modelTag + confidenceTag : null,
+          true /* autoSpeak — GNAN speaks every reply */,
         );
 
         // Store bot response in history
@@ -266,7 +327,7 @@ class AssistantUI {
     this._scrollToBottom();
   }
 
-  addBotMessage(text, meta = null) {
+  addBotMessage(text, meta = null, autoSpeak = false) {
     const div = document.createElement("div");
     div.className = "chat-msg chat-msg-bot";
     div.setAttribute("role", "listitem");
@@ -287,12 +348,23 @@ class AssistantUI {
     const actions = document.createElement("div");
     actions.className = "msg-actions";
 
-    // TTS button
+    // TTS toggle button — shows whether currently speaking
     const ttsBtn = document.createElement("button");
-    ttsBtn.className = "btn btn-ghost btn-sm";
+    ttsBtn.className = "btn btn-ghost btn-sm tts-btn";
     ttsBtn.innerHTML = "🔊 Listen";
     ttsBtn.setAttribute("aria-label", "Read this message aloud");
-    ttsBtn.addEventListener("click", () => this._speakText(text));
+    ttsBtn.addEventListener("click", () => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        ttsBtn.innerHTML = "🔊 Listen";
+      } else {
+        this._speakText(text);
+        ttsBtn.innerHTML = "⏹️ Stop";
+        window.speechSynthesis.addEventListener("end", () => {
+          ttsBtn.innerHTML = "🔊 Listen";
+        }, { once: true });
+      }
+    });
     actions.appendChild(ttsBtn);
 
     // Copy button
@@ -313,6 +385,9 @@ class AssistantUI {
     div.appendChild(actions);
     this.messages.appendChild(div);
     this._scrollToBottom();
+
+    // Auto-speak every bot reply (GNAN talks to you!)
+    if (autoSpeak) this._speakText(text);
   }
 
   addTypingIndicator() {
@@ -343,23 +418,31 @@ class AssistantUI {
     this.messages.scrollTop = this.messages.scrollHeight;
   }
 
-  /** Text-to-speech: try Cloud TTS, fallback to browser */
-  async _speakText(text) {
-    // Strip markdown
+  /** Text-to-speech: GNAN's youthful 16-year-old voice */
+  _speakText(text) {
+    if (this.isMuted) return;
+    if (!("speechSynthesis" in window)) return;
+
+    // Strip markdown symbols so they aren't read aloud
     const cleanText = text
       .replace(/\*\*(.*?)\*\*/g, "$1")
       .replace(/\*(.*?)\*/g, "$1")
-      .replace(/[•\-]/g, "");
+      .replace(/[•\-]/g, "")
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, "") // remove emojis
+      .trim();
 
-    // Try browser SpeechSynthesis
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel(); // Stop any ongoing speech
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      utterance.lang = "en-US";
-      window.speechSynthesis.speak(utterance);
-    }
+    window.speechSynthesis.cancel(); // stop anything already playing
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // 🎤 GNAN voice profile — bright, teenage girl
+    if (this._selectedVoice) utterance.voice = this._selectedVoice;
+    utterance.lang  = "en-US";
+    utterance.rate  = 1.15;  // slightly peppy
+    utterance.pitch = 1.55;  // high — teen girl pitch
+    utterance.volume = 1.0;
+
+    window.speechSynthesis.speak(utterance);
   }
 
   /** Clear conversation history */
