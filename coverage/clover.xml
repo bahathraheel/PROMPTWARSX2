@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1777568842487" clover="3.2.0">
-  <project timestamp="1777568842487" name="All files">
-    <metrics statements="700" coveredstatements="550" conditionals="383" coveredconditionals="243" methods="105" coveredmethods="76" elements="1188" coveredelements="869" complexity="0" loc="700" ncloc="700" packages="5" files="29" classes="29"/>
+<coverage generated="1777569184478" clover="3.2.0">
+  <project timestamp="1777569184479" name="All files">
+    <metrics statements="700" coveredstatements="548" conditionals="383" coveredconditionals="242" methods="105" coveredmethods="76" elements="1188" coveredelements="866" complexity="0" loc="700" ncloc="700" packages="5" files="29" classes="29"/>
     <package name="promptwarsx2-1">
       <metrics statements="41" coveredstatements="33" conditionals="8" coveredconditionals="3" methods="4" coveredmethods="1"/>
       <file name="server.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\server.js">
@@ -352,7 +352,7 @@
       </file>
     </package>
     <package name="promptwarsx2-1.src.services">
-      <metrics statements="320" coveredstatements="263" conditionals="214" coveredconditionals="152" methods="39" coveredmethods="33"/>
+      <metrics statements="320" coveredstatements="261" conditionals="214" coveredconditionals="151" methods="39" coveredmethods="33"/>
       <file name="civic.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\civic.js">
         <metrics statements="33" coveredstatements="31" conditionals="27" coveredconditionals="20" methods="4" coveredmethods="4"/>
         <line num="5" count="15" type="stmt"/>
@@ -443,18 +443,18 @@
       </file>
       <file name="gemini.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\gemini.js">
         <metrics statements="113" coveredstatements="72" conditionals="122" coveredconditionals="76" methods="14" coveredmethods="8"/>
-        <line num="7" count="14" type="stmt"/>
-        <line num="8" count="14" type="stmt"/>
-        <line num="9" count="14" type="stmt"/>
-        <line num="11" count="14" type="stmt"/>
-        <line num="47" count="14" type="stmt"/>
-        <line num="50" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="51" count="1" type="stmt"/>
-        <line num="52" count="1" type="stmt"/>
-        <line num="59" count="1" type="stmt"/>
+        <line num="7" count="15" type="stmt"/>
+        <line num="8" count="15" type="stmt"/>
+        <line num="9" count="15" type="stmt"/>
+        <line num="11" count="15" type="stmt"/>
+        <line num="47" count="15" type="stmt"/>
+        <line num="50" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="51" count="2" type="stmt"/>
+        <line num="52" count="2" type="stmt"/>
+        <line num="59" count="2" type="stmt"/>
         <line num="61" count="0" type="stmt"/>
         <line num="62" count="0" type="stmt"/>
-        <line num="65" count="1" type="stmt"/>
+        <line num="65" count="2" type="stmt"/>
         <line num="72" count="1" type="stmt"/>
         <line num="73" count="1" type="cond" truecount="1" falsecount="1"/>
         <line num="74" count="0" type="stmt"/>
@@ -497,8 +497,8 @@
         <line num="154" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="155" count="0" type="stmt"/>
         <line num="160" count="4" type="stmt"/>
-        <line num="167" count="4" type="stmt"/>
-        <line num="168" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="167" count="5" type="stmt"/>
+        <line num="168" count="5" type="cond" truecount="2" falsecount="0"/>
         <line num="169" count="3" type="cond" truecount="1" falsecount="1"/>
         <line num="170" count="3" type="cond" truecount="1" falsecount="1"/>
         <line num="171" count="3" type="cond" truecount="1" falsecount="1"/>
@@ -555,7 +555,7 @@
         <line num="392" count="2" type="stmt"/>
         <line num="406" count="0" type="stmt"/>
         <line num="418" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="421" count="14" type="stmt"/>
+        <line num="421" count="15" type="stmt"/>
       </file>
       <file name="geocode.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\geocode.js">
         <metrics statements="21" coveredstatements="21" conditionals="16" coveredconditionals="15" methods="2" coveredmethods="2"/>
@@ -606,8 +606,8 @@
         <line num="17" count="2" type="stmt"/>
         <line num="26" count="2" type="stmt"/>
         <line num="31" count="0" type="stmt"/>
-        <line num="33" count="2" type="stmt"/>
-        <line num="34" count="2" type="stmt"/>
+        <line num="33" count="1" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
         <line num="38" count="3" type="stmt"/>
       </file>
       <file name="nlp.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\nlp.js">
@@ -635,7 +635,7 @@
         <line num="58" count="19" type="stmt"/>
       </file>
       <file name="secretManager.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\secretManager.js">
-        <metrics statements="15" coveredstatements="12" conditionals="4" coveredconditionals="3" methods="2" coveredmethods="2"/>
+        <metrics statements="15" coveredstatements="12" conditionals="4" coveredconditionals="2" methods="2" coveredmethods="2"/>
         <line num="6" count="4" type="stmt"/>
         <line num="9" count="2" type="cond" truecount="1" falsecount="1"/>
         <line num="11" count="2" type="stmt"/>
@@ -647,13 +647,13 @@
         <line num="20" count="0" type="stmt"/>
         <line num="21" count="0" type="stmt"/>
         <line num="22" count="0" type="stmt"/>
-        <line num="24" count="2" type="stmt"/>
-        <line num="28" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="24" count="1" type="stmt"/>
+        <line num="28" count="1" type="cond" truecount="1" falsecount="1"/>
         <line num="33" count="1" type="stmt"/>
         <line num="36" count="4" type="stmt"/>
       </file>
       <file name="storage.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\storage.js">
-        <metrics statements="18" coveredstatements="15" conditionals="3" coveredconditionals="2" methods="2" coveredmethods="2"/>
+        <metrics statements="18" coveredstatements="13" conditionals="3" coveredconditionals="2" methods="2" coveredmethods="2"/>
         <line num="12" count="1" type="stmt"/>
         <line num="13" count="1" type="stmt"/>
         <line num="14" count="1" type="stmt"/>
@@ -669,8 +669,8 @@
         <line num="36" count="1" type="stmt"/>
         <line num="39" count="1" type="stmt"/>
         <line num="43" count="0" type="stmt"/>
-        <line num="45" count="1" type="stmt"/>
-        <line num="46" count="1" type="stmt"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
         <line num="50" count="3" type="stmt"/>
       </file>
       <file name="translate.js" path="C:\Users\HP\Desktop\ANTI GRAVITY\promptwarsx2-1\src\services\translate.js">
@@ -732,7 +732,7 @@
         <line num="40" count="23" type="stmt"/>
         <line num="50" count="23" type="stmt"/>
         <line num="53" count="23" type="cond" truecount="2" falsecount="0"/>
-        <line num="54" count="7" type="stmt"/>
+        <line num="54" count="5" type="stmt"/>
         <line num="57" count="23" type="stmt"/>
         <line num="58" count="23" type="stmt"/>
         <line num="60" count="0" type="stmt"/>
